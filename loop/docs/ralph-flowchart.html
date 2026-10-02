@@ -1,0 +1,729 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>The Fresh-Context Relay · Portable Ralph Loop</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --paper: #f2eee3;
+      --paper-raised: #fbf8f0;
+      --ink: #20231f;
+      --muted: #66685f;
+      --rule: #c8c1b1;
+      --rule-strong: #817b6e;
+      --active: #a33b20;
+      --active-soft: #f1d6c8;
+      --durable: #17675d;
+      --durable-soft: #d2e6df;
+      --complete: #27622f;
+      --complete-soft: #d8e8d4;
+      --warning: #815600;
+      --warning-soft: #f2e3b4;
+      --failed: #9a2732;
+      --failed-soft: #efd4d5;
+      --focus: #005fcc;
+      --shadow: 0 12px 32px rgba(43, 38, 29, 0.09);
+      --sans: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: var(--sans);
+      font-size: 1rem;
+      line-height: 1.6;
+    }
+    button, select, textarea { font: inherit; }
+    button, select { min-height: 2.75rem; }
+    a { color: var(--active); text-underline-offset: 0.2em; }
+    code, pre, textarea { font-family: var(--mono); }
+    code { font-size: 0.92em; }
+    pre {
+      margin: 0;
+      padding: 1rem;
+      overflow-x: auto;
+      border: 1px solid var(--rule);
+      background: #242621;
+      color: #f8f3e8;
+      line-height: 1.5;
+    }
+    h1, h2, h3 { line-height: 1.12; text-wrap: balance; }
+    h1 { max-width: 11ch; margin: 0; font-size: clamp(3rem, 9vw, 7.5rem); letter-spacing: -0.065em; }
+    h2 { margin: 0; font-size: clamp(2.15rem, 5vw, 4.5rem); letter-spacing: -0.045em; }
+    h3 { font-size: 1.3rem; }
+    p { max-width: 70ch; }
+    :focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+
+    .skip-link {
+      position: fixed;
+      z-index: 50;
+      inset-block-start: 0.75rem;
+      inset-inline-start: 0.75rem;
+      padding: 0.75rem 1rem;
+      background: var(--ink);
+      color: var(--paper-raised);
+      transform: translateY(-180%);
+    }
+    .skip-link:focus { transform: translateY(0); }
+
+    .masthead {
+      min-height: 92vh;
+      display: grid;
+      align-content: space-between;
+      gap: 4rem;
+      padding: clamp(1.25rem, 4vw, 4rem);
+      border-block-end: 1px solid var(--ink);
+    }
+    .masthead-top, .section-index, .legend, .action-row, .chapter-label, .command-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .wordmark { font-family: var(--mono); font-size: 0.82rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; }
+    .eyebrow { margin: 0 0 1rem; color: var(--active); font-family: var(--mono); font-size: 0.78rem; font-weight: 800; letter-spacing: 0.11em; text-transform: uppercase; }
+    .lede { margin: 1.5rem 0 0; max-width: 51ch; font-size: clamp(1.15rem, 2vw, 1.55rem); }
+    .safety-note { max-width: 43rem; padding-inline-start: 1rem; border-inline-start: 4px solid var(--warning); }
+    .section-index { justify-content: space-between; border-block: 1px solid var(--rule-strong); padding-block: 1rem; }
+    .section-index a { min-height: 2.75rem; display: inline-flex; align-items: center; color: var(--ink); font-family: var(--mono); font-size: 0.78rem; font-weight: 700; text-decoration: none; text-transform: uppercase; }
+    .section-index a:hover { color: var(--active); }
+
+    main > section { padding: clamp(4rem, 9vw, 9rem) clamp(1.25rem, 4vw, 4rem); border-block-end: 1px solid var(--ink); scroll-margin-top: 1rem; }
+    .section-intro { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(18rem, 0.8fr); gap: clamp(2rem, 7vw, 7rem); align-items: end; margin-block-end: 3rem; }
+    .chapter-label { margin-block-end: 1rem; color: var(--active); font-family: var(--mono); font-weight: 800; text-transform: uppercase; }
+    .chapter-number { width: 2.5rem; height: 2.5rem; display: inline-grid; place-items: center; border: 1px solid currentColor; border-radius: 50%; }
+    .section-copy { margin: 0; font-size: 1.12rem; }
+    .command-row { margin-block: 1.5rem 0; }
+    .command-row code { display: block; padding: 0.65rem 0.8rem; background: var(--ink); color: var(--paper-raised); }
+
+    .legend { margin-block-start: 2.5rem; }
+    .legend-item { display: inline-flex; align-items: center; gap: 0.55rem; font-size: 0.88rem; }
+    .legend-mark { width: 1rem; height: 1rem; border: 2px solid var(--ink); }
+    .legend-mark.fresh { border-radius: 50%; background: var(--active-soft); }
+    .legend-mark.durable { background: var(--durable); }
+    .legend-mark.gate { transform: rotate(45deg); background: var(--warning-soft); }
+    .legend-mark.stop { border-radius: 50% 50% 0 50%; background: var(--failed-soft); }
+
+    .flow-shell { position: relative; display: grid; grid-template-columns: minmax(18rem, 0.85fr) minmax(19rem, 1.15fr); gap: clamp(1.5rem, 4vw, 4rem); align-items: start; }
+    .flow-rail { position: relative; margin: 0; padding: 0; list-style: none; counter-reset: flow; }
+    .flow-rail::before { content: ""; position: absolute; inset-block: 1.4rem; inset-inline-start: 1.45rem; width: 2px; background: var(--rule-strong); }
+    .flow-step { position: relative; counter-increment: flow; padding-block-end: 0.75rem; }
+    .flow-step button {
+      position: relative;
+      width: 100%;
+      display: grid;
+      grid-template-columns: 2.9rem minmax(0, 1fr);
+      gap: 0.8rem;
+      align-items: center;
+      padding: 0.65rem 0.75rem 0.65rem 0;
+      border: 0;
+      background: transparent;
+      color: var(--muted);
+      text-align: start;
+      cursor: pointer;
+    }
+    .step-index {
+      position: relative;
+      z-index: 1;
+      width: 2.9rem;
+      height: 2.9rem;
+      display: grid;
+      place-items: center;
+      border: 2px solid var(--rule-strong);
+      border-radius: 50%;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      font-weight: 800;
+    }
+    .step-title { font-weight: 750; }
+    .flow-step button:hover { color: var(--ink); }
+    .flow-step button[aria-current="step"] { color: var(--ink); }
+    .flow-step button[aria-current="step"] .step-index { border-color: var(--active); background: var(--active); color: #fff; box-shadow: 0 0 0 5px var(--active-soft); }
+    .flow-step.is-visited .step-index { border-color: var(--durable); background: var(--durable-soft); }
+    .flow-step.is-muted { opacity: 0.42; }
+
+    .detail-stage { position: sticky; inset-block-start: 1rem; min-height: 30rem; padding: clamp(1.25rem, 3vw, 2.5rem); border: 1px solid var(--rule-strong); background: var(--paper-raised); box-shadow: var(--shadow); }
+    .detail-stage::before { content: "Fresh process"; display: block; width: max-content; margin-block-end: 1.5rem; padding: 0.3rem 0.55rem; border: 1px solid var(--active); color: var(--active); font-family: var(--mono); font-size: 0.7rem; font-weight: 800; text-transform: uppercase; }
+    .detail-panel h3 { margin-block-start: 0; font-size: clamp(1.55rem, 3vw, 2.35rem); }
+    .detail-panel ul { padding-inline-start: 1.2rem; }
+    .detail-panel li + li { margin-block-start: 0.55rem; }
+    .detail-kicker { color: var(--active); font-family: var(--mono); font-size: 0.78rem; font-weight: 800; text-transform: uppercase; }
+    .enhanced .detail-panel[hidden] { display: none; }
+    .step-status { min-height: 1.7rem; margin-block: 1rem; color: var(--muted); font-family: var(--mono); font-size: 0.82rem; }
+    .flow-controls { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.65rem; margin-block-start: 1.5rem; }
+    .control-button {
+      padding: 0.7rem 0.85rem;
+      border: 1px solid var(--ink);
+      background: transparent;
+      color: var(--ink);
+      font-weight: 750;
+      cursor: pointer;
+    }
+    .control-button.primary { background: var(--ink); color: var(--paper-raised); }
+    .control-button:hover { background: var(--active-soft); color: var(--ink); }
+    .control-button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    .outcome-box { margin-block-start: 3rem; padding-block-start: 2rem; border-block-start: 1px solid var(--rule-strong); }
+    fieldset { margin: 0; padding: 0; border: 0; }
+    legend { margin-block-end: 1rem; font-size: 1.2rem; font-weight: 800; }
+    .choice-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0.65rem; }
+    .choice-label { position: relative; display: flex; align-items: center; min-height: 4.5rem; padding: 0.8rem; border: 1px solid var(--rule-strong); background: var(--paper-raised); cursor: pointer; }
+    .choice-label input { position: absolute; opacity: 0; }
+    .choice-label:has(input:checked) { border: 2px solid var(--active); background: var(--active-soft); }
+    .choice-label:has(input:focus-visible) { outline: 3px solid var(--focus); outline-offset: 3px; }
+    .outcome-result { margin-block-start: 1rem; padding: 1rem; border-inline-start: 4px solid var(--active); background: var(--paper-raised); }
+
+    .relay-figure { margin: 0; padding: clamp(1.25rem, 4vw, 3rem); border: 1px solid var(--rule-strong); background: var(--ink); color: var(--paper-raised); overflow: hidden; }
+    .relay-figure figcaption { max-width: 62ch; margin-block-end: 2.5rem; font-size: 1.12rem; }
+    .threads { display: grid; gap: 1rem; }
+    .thread { display: grid; grid-template-columns: minmax(8rem, 0.32fr) minmax(0, 1fr); gap: 1rem; align-items: center; }
+    .thread-label { font-family: var(--mono); font-size: 0.8rem; font-weight: 800; }
+    .thread-line { position: relative; min-height: 2.8rem; display: flex; align-items: center; justify-content: space-between; gap: 0.8rem; padding-inline: 1rem; border: 1px solid #75998e; color: #d8eee6; }
+    .thread-line::after { content: ""; position: absolute; z-index: 0; inset-inline: 0; inset-block-start: 50%; height: 2px; background: #79b6a5; }
+    .thread-line span { position: relative; z-index: 1; padding: 0.15rem 0.35rem; background: var(--ink); font-size: 0.8rem; }
+    .shuttle-pass { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.7rem; margin-block-start: 2rem; }
+    .pass { position: relative; padding: 1rem; border: 1px dashed #d9987e; color: #f1c4b1; }
+    .pass strong { display: block; color: #fff; }
+    .pass::before { content: "↦"; position: absolute; inset-inline-start: -1rem; inset-block-start: 50%; color: #d9987e; transform: translateY(-50%); }
+    .memory-table-wrap { margin-block-start: 2rem; overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; background: var(--paper-raised); }
+    th, td { padding: 0.9rem 1rem; border: 1px solid var(--rule); text-align: start; vertical-align: top; }
+    th { background: var(--ink); color: var(--paper-raised); }
+
+    .terminal-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.75rem; margin-block-start: 2rem; }
+    .terminal { min-height: 11rem; padding: 1rem; border: 1px solid var(--rule-strong); background: var(--paper-raised); }
+    .terminal h3 { margin: 0.8rem 0 0.45rem; }
+    .terminal p { margin: 0; font-size: 0.9rem; }
+    .terminal-symbol { width: 2.5rem; height: 2.5rem; display: grid; place-items: center; border: 2px solid currentColor; font-family: var(--mono); font-weight: 900; }
+    .terminal.complete { color: var(--complete); background: var(--complete-soft); }
+    .terminal.complete .terminal-symbol { border-radius: 50%; }
+    .terminal.blocked { color: var(--warning); background: var(--warning-soft); }
+    .terminal.blocked .terminal-symbol { transform: rotate(45deg); }
+    .terminal.blocked .terminal-symbol span { transform: rotate(-45deg); }
+    .terminal.failed { color: var(--failed); background: var(--failed-soft); }
+    .terminal.failed .terminal-symbol { border-radius: 50% 50% 0 50%; }
+    .terminal.neutral .terminal-symbol { border-style: dashed; }
+
+    .lab-grid { display: grid; grid-template-columns: minmax(18rem, 0.7fr) minmax(0, 1.3fr); gap: clamp(1.5rem, 5vw, 5rem); align-items: start; }
+    .lab-form { padding: 1.25rem; border: 1px solid var(--rule-strong); background: var(--paper-raised); }
+    .field { display: grid; gap: 0.4rem; margin-block-end: 1rem; }
+    .field label { font-weight: 750; }
+    .field select { width: 100%; padding: 0.6rem; border: 1px solid var(--rule-strong); background: var(--paper-raised); color: var(--ink); }
+    .scenario-fields { display: grid; gap: 0.75rem; }
+    .scenario-output { min-height: 25rem; }
+    .relay-rows { display: grid; gap: 0.65rem; margin-block-end: 1rem; }
+    .relay-row { display: grid; grid-template-columns: 6rem minmax(0, 1fr) 8rem; gap: 0.75rem; align-items: center; min-height: 4rem; padding: 0.75rem; border: 1px solid var(--rule-strong); background: var(--paper-raised); }
+    .relay-row strong { font-family: var(--mono); font-size: 0.75rem; text-transform: uppercase; }
+    .row-track { position: relative; min-height: 1rem; border-block-start: 2px solid var(--durable); }
+    .row-track::after { content: "◆"; position: absolute; inset-inline-end: 0; inset-block-start: -0.8rem; color: var(--active); }
+    .row-result { font-size: 0.82rem; font-weight: 800; text-align: end; }
+    .transcript { width: 100%; min-height: 15rem; resize: vertical; padding: 1rem; border: 1px solid var(--rule-strong); background: #242621; color: #f8f3e8; line-height: 1.5; }
+    .lab-status { min-height: 1.6rem; color: var(--durable); font-weight: 700; }
+
+    .recovery-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(18rem, 0.72fr); gap: clamp(2rem, 6vw, 6rem); }
+    .recovery-list { margin: 0; padding: 0; list-style: none; counter-reset: recovery; }
+    .recovery-list li { counter-increment: recovery; display: grid; grid-template-columns: 3rem minmax(0, 1fr); gap: 1rem; padding-block: 1rem; border-block-start: 1px solid var(--rule); }
+    .recovery-list li::before { content: counter(recovery, decimal-leading-zero); font-family: var(--mono); color: var(--active); font-weight: 800; }
+    .protocol-list { display: grid; gap: 0.75rem; }
+    .protocol-item { padding: 1rem; border: 1px solid var(--rule); background: var(--paper-raised); }
+    .protocol-item code { display: block; overflow-wrap: anywhere; color: var(--active); }
+    footer { display: flex; justify-content: space-between; gap: 1rem; padding: 1.25rem clamp(1.25rem, 4vw, 4rem); font-family: var(--mono); font-size: 0.78rem; }
+
+    .noscript-note { padding: 1rem; border: 2px solid var(--warning); background: var(--warning-soft); }
+    .enhanced .noscript-note { display: none; }
+
+    @media (max-width: 68rem) {
+      .choice-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .terminal-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 48rem) {
+      html { scroll-behavior: auto; }
+      .masthead { min-height: auto; }
+      .section-intro, .flow-shell, .lab-grid, .recovery-grid { grid-template-columns: 1fr; }
+      .detail-stage { position: relative; inset-block-start: auto; min-height: auto; order: -1; }
+      .flow-rail::before { inset-inline-start: 1.35rem; }
+      .step-index { width: 2.7rem; height: 2.7rem; }
+      .choice-grid, .terminal-grid { grid-template-columns: 1fr; }
+      .thread { grid-template-columns: 1fr; gap: 0.35rem; }
+      .thread-line { overflow-x: auto; }
+      .shuttle-pass { grid-template-columns: 1fr; }
+      .pass::before { content: "↓"; inset-inline-start: 50%; inset-block-start: -1.4rem; transform: translateX(-50%); }
+      .relay-row { grid-template-columns: 1fr; }
+      .row-result { text-align: start; }
+      footer { flex-direction: column; }
+    }
+
+    @media (max-width: 25rem) {
+      .flow-controls { grid-template-columns: 1fr; }
+      .section-index { align-items: stretch; flex-direction: column; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+    }
+
+    @media (forced-colors: active) {
+      .flow-step button[aria-current="step"] .step-index, .choice-label:has(input:checked) { outline: 3px solid Highlight; }
+      .thread-line::after, .row-track { border-color: CanvasText; background: CanvasText; }
+    }
+
+    @media print {
+      .section-index, .flow-controls, .lab-form, .action-row, .skip-link { display: none; }
+      .masthead { min-height: auto; }
+      main > section { break-inside: avoid; }
+      .detail-stage { position: static; box-shadow: none; }
+      .enhanced .detail-panel[hidden] { display: block; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#single-run">Skip to the single-run flow</a>
+
+  <header class="masthead">
+    <div class="masthead-top">
+      <span class="wordmark">Portable Ralph Loop</span>
+      <span aria-hidden="true">/</span>
+      <span class="wordmark">Execution model</span>
+    </div>
+    <div>
+      <p class="eyebrow">An interactive field guide</p>
+      <h1>The Fresh-Context Relay</h1>
+      <p class="lede">One fresh context carries one ready task forward. Project artifacts carry knowledge into the next context.</p>
+      <div class="legend" aria-label="Diagram legend">
+        <span class="legend-item"><span class="legend-mark fresh" aria-hidden="true"></span>Fresh process</span>
+        <span class="legend-item"><span class="legend-mark durable" aria-hidden="true"></span>Durable memory</span>
+        <span class="legend-item"><span class="legend-mark gate" aria-hidden="true"></span>Validation gate</span>
+        <span class="legend-item"><span class="legend-mark stop" aria-hidden="true"></span>Stop condition</span>
+      </div>
+    </div>
+    <div>
+      <p class="safety-note"><strong>Begin supervised.</strong> Run <code>ralph-once.sh</code> until you trust the prompt, permissions, branch behavior, and validation feedback. Only then enable repetition.</p>
+      <nav class="section-index" aria-label="Learning chapters">
+        <a href="#single-run">01 · One run</a>
+        <a href="#handoff">02 · Handoff</a>
+        <a href="#bounded-loop">03 · Bounded loop</a>
+        <a href="#route-lab">04 · Route Lab</a>
+        <a href="#recovery">05 · Recovery</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section id="single-run" aria-labelledby="single-run-title">
+      <div class="section-intro">
+        <div>
+          <div class="chapter-label"><span class="chapter-number">01</span> Follow one shuttle pass</div>
+          <h2 id="single-run-title">One process. One task. One return.</h2>
+        </div>
+        <div>
+          <p class="section-copy"><code>ralph-once.sh</code> is the unit to understand first. It validates the package, opens one agent process, lets that fresh context complete at most one ready task, and returns control.</p>
+          <div class="command-row"><code>./loop/ralph-once.sh</code><code>RALPH_AUTO_COMMIT=0 ./loop/ralph-once.sh</code></div>
+        </div>
+      </div>
+
+      <p class="noscript-note">The complete walkthrough is visible below. Enable JavaScript for guided stepping and route highlighting.</p>
+
+      <div class="flow-shell" data-flow="single">
+        <ol class="flow-rail" aria-label="Single-run steps">
+          <li class="flow-step"><button type="button" data-step="single-1"><span class="step-index">01</span><span class="step-title">Configure the run</span></button></li>
+          <li class="flow-step"><button type="button" data-step="single-2"><span class="step-index">02</span><span class="step-title">Check package files</span></button></li>
+          <li class="flow-step"><button type="button" data-step="single-3"><span class="step-index">03</span><span class="step-title">Validate the backlog</span></button></li>
+          <li class="flow-step"><button type="button" data-step="single-4"><span class="step-index">04</span><span class="step-title">Verify the host</span></button></li>
+          <li class="flow-step"><button type="button" data-step="single-5"><span class="step-index">05</span><span class="step-title">Open a fresh context</span></button></li>
+          <li class="flow-step"><button type="button" data-step="single-6"><span class="step-index">06</span><span class="step-title">Reconstruct memory</span></button></li>
+          <li class="flow-step"><button type="button" data-step="single-7"><span class="step-index">07</span><span class="step-title">Choose one ready task</span></button></li>
+          <li class="flow-step"><button type="button" data-step="single-8"><span class="step-index">08</span><span class="step-title">Resolve the route</span></button></li>
+          <li class="flow-step"><button type="button" data-step="single-9"><span class="step-index">09</span><span class="step-title">Work and verify</span></button></li>
+          <li class="flow-step"><button type="button" data-step="single-10"><span class="step-index">10</span><span class="step-title">Persist evidence</span></button></li>
+          <li class="flow-step"><button type="button" data-step="single-11"><span class="step-index">11</span><span class="step-title">Return control</span></button></li>
+        </ol>
+
+        <div class="detail-stage">
+          <p class="step-status" data-step-status aria-live="polite"></p>
+          <article class="detail-panel" data-detail="single-1">
+            <p class="detail-kicker">Wrapper configuration</p><h3>Choose the agent contract</h3>
+            <p>The default adapter calls <code>cmd -p --yolo</code>. <code>--agent</code> chooses another executable, repeated <code>--agent-arg</code> options replace the defaults, and <code>--no-commit</code> disables automatic commits.</p>
+          </article>
+          <article class="detail-panel" data-detail="single-2">
+            <p class="detail-kicker">Preflight</p><h3>Require the durable inputs</h3>
+            <p>The wrapper refuses to start without <code>PROMPT.md</code>, <code>prd.json</code>, and <code>progress.txt</code>. A missing input fails before an agent process exists.</p>
+          </article>
+          <article class="detail-panel" data-detail="single-3">
+            <p class="detail-kicker">Validation gate</p><h3>Prove the backlog is executable</h3>
+            <ul><li>Task fields and IDs have the required shape.</li><li>IDs and branch names are unique.</li><li>Dependencies exist, do not point to self, and form no cycle.</li><li>Every task branch passes Git ref validation.</li></ul>
+          </article>
+          <article class="detail-panel" data-detail="single-4">
+            <p class="detail-kicker">Host boundary</p><h3>Verify where and how work will run</h3>
+            <p>The inferred or overridden project root must exist, and the configured agent executable must be available. The wrapper changes to the host project root before invoking it.</p>
+          </article>
+          <article class="detail-panel" data-detail="single-5">
+            <p class="detail-kicker">Fresh process</p><h3>Start with a clean context window</h3>
+            <p>The wrapper reads the stable prompt, appends runtime paths and commit mode, creates a timestamped log, then starts exactly one coding-agent process. Output streams to the terminal and the log.</p>
+          </article>
+          <article class="detail-panel" data-detail="single-6">
+            <p class="detail-kicker">Durable memory</p><h3>Reconstruct context from artifacts</h3>
+            <p>The new agent reads the PRD, append-only progress notes, recent Git history, repository guidance, and established project checks. No previous conversation is required.</p>
+          </article>
+          <article class="detail-panel" data-detail="single-7">
+            <p class="detail-kicker">Deterministic selection</p><h3>Choose at most one ready task</h3>
+            <p>A task is ready when <code>passes</code> is false and every dependency passes. The lowest numeric priority wins; document order breaks ties.</p>
+          </article>
+          <article class="detail-panel" data-detail="single-8">
+            <p class="detail-kicker">Decision point</p><h3>Continue, complete, or stop blocked</h3>
+            <ul><li>If all tasks pass, emit <code>&lt;promise&gt;COMPLETE&lt;/promise&gt;</code>.</li><li>If incomplete tasks exist but none is ready, emit <code>&lt;ralph&gt;BLOCKED:no-ready-task&lt;/ralph&gt;</code>.</li><li>If one task is ready, continue only with that task.</li></ul>
+          </article>
+          <article class="detail-panel" data-detail="single-9">
+            <p class="detail-kicker">Task execution</p><h3>Change only what the task requires</h3>
+            <p>The agent checks working-tree safety, enters the task branch only when safe, avoids unrelated work, and proves every acceptance criterion with the project’s established tests, type checks, lint checks, builds, or manual verification.</p>
+          </article>
+          <article class="detail-panel" data-detail="single-10">
+            <p class="detail-kicker">Evidence handoff</p><h3>Persist facts, not conversation</h3>
+            <p>Success updates only the selected task, appends a structured progress entry, and optionally creates one atomic commit. Failure keeps <code>passes: false</code>, records actionable context when safe, and creates no success commit.</p>
+          </article>
+          <article class="detail-panel" data-detail="single-11">
+            <p class="detail-kicker">Process boundary</p><h3>Emit a marker and return</h3>
+            <p>A successful task emits <code>&lt;ralph&gt;ITERATION_COMPLETE:TASK-ID&lt;/ralph&gt;</code>. A failure emits <code>&lt;ralph&gt;FAILED:TASK-ID&lt;/ralph&gt;</code>. The wrapper returns the child status and never begins another task.</p>
+          </article>
+          <div class="flow-controls" aria-label="Single-run walkthrough controls">
+            <button class="control-button" type="button" data-prev>Previous</button>
+            <button class="control-button primary" type="button" data-next>Next step</button>
+            <button class="control-button" type="button" data-show-all>Show full route</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="outcome-box">
+        <fieldset data-outcome-picker>
+          <legend>Choose what the fresh context discovers</legend>
+          <div class="choice-grid">
+            <label class="choice-label"><input type="radio" name="single-outcome" value="success" checked><span>Ready task succeeds</span></label>
+            <label class="choice-label"><input type="radio" name="single-outcome" value="complete"><span>All tasks already pass</span></label>
+            <label class="choice-label"><input type="radio" name="single-outcome" value="blocked"><span>No task is ready</span></label>
+            <label class="choice-label"><input type="radio" name="single-outcome" value="failed"><span>Selected task fails</span></label>
+            <label class="choice-label"><input type="radio" name="single-outcome" value="nonzero"><span>Agent exits nonzero</span></label>
+          </div>
+        </fieldset>
+        <output class="outcome-result" data-outcome-result aria-live="polite">One task passes, durable state changes, and control returns with an iteration-complete marker.</output>
+      </div>
+    </section>
+
+    <section id="handoff" aria-labelledby="handoff-title">
+      <div class="section-intro">
+        <div><div class="chapter-label"><span class="chapter-number">02</span> Inspect the handoff</div><h2 id="handoff-title">The process ends. The threads remain.</h2></div>
+        <p class="section-copy">Fresh context is intentional. Continuity lives in inspectable project artifacts instead of an endlessly growing conversation.</p>
+      </div>
+
+      <figure class="relay-figure">
+        <figcaption>Each shuttle pass can disappear because the next process can reconstruct the state from four durable threads.</figcaption>
+        <div class="threads" aria-hidden="true">
+          <div class="thread"><span class="thread-label">PROMPT.md</span><div class="thread-line"><span>rules</span><span>task limit</span><span>markers</span></div></div>
+          <div class="thread"><span class="thread-label">prd.json</span><div class="thread-line"><span>priority</span><span>dependencies</span><span>passes</span></div></div>
+          <div class="thread"><span class="thread-label">progress.txt</span><div class="thread-line"><span>checks</span><span>learnings</span><span>handoff</span></div></div>
+          <div class="thread"><span class="thread-label">Git</span><div class="thread-line"><span>branch</span><span>diff</span><span>commit</span></div></div>
+        </div>
+        <div class="shuttle-pass" aria-hidden="true">
+          <div class="pass"><strong>Context A</strong>Completes TASK-001, then exits.</div>
+          <div class="pass"><strong>Context B</strong>Reads the changed threads, completes TASK-002, then exits.</div>
+          <div class="pass"><strong>Context C</strong>Starts clean but knows what survived.</div>
+        </div>
+      </figure>
+
+      <div class="memory-table-wrap">
+        <table>
+          <thead><tr><th scope="col">Ends with the process</th><th scope="col">Survives for the next process</th></tr></thead>
+          <tbody>
+            <tr><td>Conversation context</td><td><code>prd.json</code> task state and notes</td></tr>
+            <tr><td>Temporary reasoning</td><td><code>progress.txt</code> handoff entries</td></tr>
+            <tr><td>In-process variables</td><td>Git branch, working tree, and commits</td></tr>
+            <tr><td>The agent invocation</td><td>The stable <code>PROMPT.md</code> protocol</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="bounded-loop" aria-labelledby="bounded-title">
+      <div class="section-intro">
+        <div><div class="chapter-label"><span class="chapter-number">03</span> Add the supervisor</div><h2 id="bounded-title">Repeat only while progress is trustworthy.</h2></div>
+        <div><p class="section-copy"><code>ralph.sh</code> does not implement tasks. It supervises fresh single runs, checks the protocol, and refuses to continue when evidence is missing or contradictory.</p><div class="command-row"><code>./loop/ralph.sh 10</code></div></div>
+      </div>
+
+      <div class="flow-shell" data-flow="loop">
+        <ol class="flow-rail" aria-label="Bounded-loop steps">
+          <li class="flow-step"><button type="button" data-step="loop-1"><span class="step-index">01</span><span class="step-title">Validate the bound</span></button></li>
+          <li class="flow-step"><button type="button" data-step="loop-2"><span class="step-index">02</span><span class="step-title">Validate the PRD</span></button></li>
+          <li class="flow-step"><button type="button" data-step="loop-3"><span class="step-index">03</span><span class="step-title">Acquire the lock</span></button></li>
+          <li class="flow-step"><button type="button" data-step="loop-4"><span class="step-index">04</span><span class="step-title">Snapshot the state</span></button></li>
+          <li class="flow-step"><button type="button" data-step="loop-5"><span class="step-index">05</span><span class="step-title">Start a fresh single run</span></button></li>
+          <li class="flow-step"><button type="button" data-step="loop-6"><span class="step-index">06</span><span class="step-title">Check process status</span></button></li>
+          <li class="flow-step"><button type="button" data-step="loop-7"><span class="step-index">07</span><span class="step-title">Check blocked or failed markers</span></button></li>
+          <li class="flow-step"><button type="button" data-step="loop-8"><span class="step-index">08</span><span class="step-title">Corroborate completion</span></button></li>
+          <li class="flow-step"><button type="button" data-step="loop-9"><span class="step-index">09</span><span class="step-title">Revalidate the PRD</span></button></li>
+          <li class="flow-step"><button type="button" data-step="loop-10"><span class="step-index">10</span><span class="step-title">Prove state changed</span></button></li>
+          <li class="flow-step"><button type="button" data-step="loop-11"><span class="step-index">11</span><span class="step-title">Require the success marker</span></button></li>
+          <li class="flow-step"><button type="button" data-step="loop-12"><span class="step-index">12</span><span class="step-title">Start the next fresh context</span></button></li>
+          <li class="flow-step"><button type="button" data-step="loop-13"><span class="step-index">13</span><span class="step-title">Enforce the iteration limit</span></button></li>
+        </ol>
+
+        <div class="detail-stage">
+          <p class="step-status" data-step-status aria-live="polite"></p>
+          <article class="detail-panel" data-detail="loop-1"><p class="detail-kicker">Bounded execution</p><h3>Require a positive maximum</h3><p>The positional number or <code>RALPH_MAX_ITERATIONS</code> defines the ceiling. Invalid and zero values stop before work begins.</p></article>
+          <article class="detail-panel" data-detail="loop-2"><p class="detail-kicker">Initial gate</p><h3>Reject an invalid backlog</h3><p>The same structural and dependency validator runs before the outer loop creates a lock or starts an agent.</p></article>
+          <article class="detail-panel" data-detail="loop-3"><p class="detail-kicker">Concurrency guard</p><h3>Only one supervisor may run</h3><p>An atomic directory lock under <code>loop/.runtime/</code> prevents concurrent loops. A trap removes only this process’s lock on exit or handled interruption.</p></article>
+          <article class="detail-panel" data-detail="loop-4"><p class="detail-kicker">Progress evidence</p><h3>Record the PRD checksum</h3><p>Before each iteration, the supervisor fingerprints <code>prd.json</code>. That snapshot later proves whether the agent persisted backlog progress.</p></article>
+          <article class="detail-panel" data-detail="loop-5"><p class="detail-kicker">Iteration N of maximum</p><h3>Launch a new single-run process</h3><p>Each pass invokes <code>ralph-once.sh</code> as a separate process and tees combined output to the iteration log.</p></article>
+          <article class="detail-panel" data-detail="loop-6"><p class="detail-kicker">First stop check</p><h3>Honor the child exit status</h3><p>A nonzero result stops immediately and propagates the failure. The supervisor does not retry a broken iteration.</p></article>
+          <article class="detail-panel" data-detail="loop-7"><p class="detail-kicker">Protocol stop</p><h3>Stop on blocked or failed work</h3><p>A <code>BLOCKED</code> or <code>FAILED</code> marker requires human attention. Automatic repetition would only reproduce or compound the problem.</p></article>
+          <article class="detail-panel" data-detail="loop-8"><p class="detail-kicker">Completion proof</p><h3>Trust marker and data together</h3><p>A completion marker succeeds only when every PRD task actually passes. A marker that contradicts the backlog is treated as protocol failure.</p></article>
+          <article class="detail-panel" data-detail="loop-9"><p class="detail-kicker">Post-run gate</p><h3>Reject corrupted state</h3><p>Before considering another pass, the supervisor reruns the PRD validator against the agent’s persisted changes.</p></article>
+          <article class="detail-panel" data-detail="loop-10"><p class="detail-kicker">Progress proof</p><h3>Compare the checksum</h3><p>If <code>prd.json</code> did not change, the loop stops. A claimed success without changed task state is not enough to justify another iteration.</p></article>
+          <article class="detail-panel" data-detail="loop-11"><p class="detail-kicker">Protocol proof</p><h3>Require iteration-complete output</h3><p>A changed PRD still needs <code>&lt;ralph&gt;ITERATION_COMPLETE:TASK-ID&lt;/ralph&gt;</code>. Missing output means the result is malformed.</p></article>
+          <article class="detail-panel" data-detail="loop-12"><p class="detail-kicker">Safe repetition</p><h3>Discard context, keep evidence</h3><p>Only a valid, changed backlog plus an iteration-complete marker allows a new process to start. The previous agent context is not reused.</p></article>
+          <article class="detail-panel" data-detail="loop-13"><p class="detail-kicker">Hard ceiling</p><h3>Stop with work remaining</h3><p>After the final allowed pass, the supervisor exits nonzero if tasks remain. It never silently extends its own budget.</p></article>
+          <div class="flow-controls" aria-label="Bounded-loop walkthrough controls">
+            <button class="control-button" type="button" data-prev>Previous</button>
+            <button class="control-button primary" type="button" data-next>Next step</button>
+            <button class="control-button" type="button" data-show-all>Show full route</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="terminal-grid" aria-label="Outer-loop terminal states">
+        <article class="terminal complete"><div class="terminal-symbol" aria-hidden="true">✓</div><h3>Complete</h3><p>The marker and PRD agree that every task passes.</p></article>
+        <article class="terminal blocked"><div class="terminal-symbol" aria-hidden="true"><span>!</span></div><h3>Blocked</h3><p>No ready task or unsafe state needs human action.</p></article>
+        <article class="terminal failed"><div class="terminal-symbol" aria-hidden="true">×</div><h3>Failed</h3><p>The task, wrapper, or agent process returned failure.</p></article>
+        <article class="terminal neutral"><div class="terminal-symbol" aria-hidden="true">=</div><h3>Unchanged</h3><p>The PRD checksum shows that no task state moved.</p></article>
+        <article class="terminal failed"><div class="terminal-symbol" aria-hidden="true">?</div><h3>Malformed</h3><p>Markers are missing or contradict persisted state.</p></article>
+        <article class="terminal blocked"><div class="terminal-symbol" aria-hidden="true"><span>▣</span></div><h3>Locked</h3><p>Another supervisor appears to own the runtime lock.</p></article>
+        <article class="terminal neutral"><div class="terminal-symbol" aria-hidden="true">#</div><h3>Iteration limit</h3><p>The fixed budget ended while work still remained.</p></article>
+      </div>
+    </section>
+
+    <section id="route-lab" aria-labelledby="lab-title">
+      <div class="section-intro">
+        <div><div class="chapter-label"><span class="chapter-number">04</span> Try a route</div><h2 id="lab-title">Route Lab</h2></div>
+        <p class="section-copy"><strong>Learning model only.</strong> This simulator does not execute shell commands, inspect your repository, or change files. It shows why the supervisor continues or stops.</p>
+      </div>
+
+      <div class="lab-grid">
+        <form class="lab-form" data-lab-form>
+          <div class="field"><label for="max-iterations">Maximum iterations</label><select id="max-iterations" name="maxIterations"><option>1</option><option>2</option><option selected>3</option><option>4</option><option>5</option></select></div>
+          <div class="scenario-fields" data-scenario-fields></div>
+          <div class="action-row">
+            <button class="control-button primary" type="submit">Run scenario</button>
+            <button class="control-button" type="reset">Reset scenario</button>
+            <button class="control-button" type="button" data-copy-transcript>Copy transcript</button>
+          </div>
+          <p class="lab-status" data-lab-status role="status"></p>
+        </form>
+
+        <div class="scenario-output">
+          <div class="relay-rows" data-relay-rows aria-label="Simulated iteration route"></div>
+          <label for="scenario-transcript"><strong>Scenario transcript</strong></label>
+          <textarea class="transcript" id="scenario-transcript" data-transcript readonly>Choose outcomes and run the scenario.</textarea>
+        </div>
+      </div>
+    </section>
+
+    <section id="recovery" aria-labelledby="recovery-title">
+      <div class="section-intro">
+        <div><div class="chapter-label"><span class="chapter-number">05</span> Recover deliberately</div><h2 id="recovery-title">A stop is information, not an invitation to bypass checks.</h2></div>
+        <p class="section-copy">Resolve the underlying state with one supervised run before returning to repetition.</p>
+      </div>
+
+      <div class="recovery-grid">
+        <ol class="recovery-list">
+          <li>Read terminal output and the latest file under <code>loop/.runtime/logs/</code>.</li>
+          <li>Inspect <code>git status</code> before touching branch or working-tree state.</li>
+          <li>Read the selected task’s notes and the latest progress entry.</li>
+          <li>Resolve unsafe changes, validation failures, or blocked dependencies manually.</li>
+          <li>Keep <code>passes: false</code> until every acceptance criterion succeeds.</li>
+          <li>Run <code>ralph-once.sh</code> again before resuming <code>ralph.sh</code>.</li>
+        </ol>
+
+        <div>
+          <h3>Protocol reference</h3>
+          <div class="protocol-list">
+            <div class="protocol-item"><code>&lt;promise&gt;COMPLETE&lt;/promise&gt;</code><span>All tasks pass; the supervisor verifies the PRD.</span></div>
+            <div class="protocol-item"><code>&lt;ralph&gt;ITERATION_COMPLETE:TASK-ID&lt;/ralph&gt;</code><span>One verified task completed and state changed.</span></div>
+            <div class="protocol-item"><code>&lt;ralph&gt;BLOCKED:reason&lt;/ralph&gt;</code><span>Human intervention is required before repetition.</span></div>
+            <div class="protocol-item"><code>&lt;ralph&gt;FAILED:TASK-ID&lt;/ralph&gt;</code><span>The selected task did not satisfy its checks.</span></div>
+          </div>
+          <h3>Commands</h3>
+          <pre><code>./loop/ralph-once.sh
+RALPH_AUTO_COMMIT=0 ./loop/ralph-once.sh
+./loop/ralph.sh 10
+./loop/ralph-once.sh --agent my-agent --agent-arg run</code></pre>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer><a href="../README.md">Back to the package guide</a><span>Offline · no build · no repository access</span></footer>
+
+  <script>
+    document.documentElement.classList.add("enhanced");
+
+    const outcomeCopy = {
+      success: "One task passes, durable state changes, and control returns with an iteration-complete marker.",
+      complete: "The fresh context confirms every task passes and returns the completion promise without changing files.",
+      blocked: "Incomplete work remains, but dependencies or safety prevent a ready task. The process returns a blocked marker.",
+      failed: "The selected task keeps passes: false, records actionable context when safe, and returns a failed marker.",
+      nonzero: "The agent process exits nonzero. The wrapper preserves that status so the outer supervisor stops immediately."
+    };
+
+    function initializeFlow(flow) {
+      const buttons = Array.from(flow.querySelectorAll("[data-step]"));
+      const panels = Array.from(flow.querySelectorAll("[data-detail]"));
+      const status = flow.querySelector("[data-step-status]");
+      const previous = flow.querySelector("[data-prev]");
+      const next = flow.querySelector("[data-next]");
+      const showAll = flow.querySelector("[data-show-all]");
+      let activeIndex = 0;
+      let fullRoute = false;
+
+      function activate(index, focus = false) {
+        activeIndex = Math.max(0, Math.min(index, buttons.length - 1));
+        buttons.forEach((button, buttonIndex) => {
+          const active = buttonIndex === activeIndex;
+          button.toggleAttribute("aria-current", active);
+          button.closest(".flow-step").classList.toggle("is-visited", buttonIndex < activeIndex || fullRoute);
+          button.closest(".flow-step").classList.toggle("is-muted", !fullRoute && buttonIndex > activeIndex + 1);
+          if (focus && active) button.focus();
+        });
+        panels.forEach(panel => { panel.hidden = panel.dataset.detail !== buttons[activeIndex].dataset.step; });
+        status.textContent = `Step ${activeIndex + 1} of ${buttons.length}: ${buttons[activeIndex].querySelector(".step-title").textContent}`;
+        previous.disabled = activeIndex === 0;
+        next.disabled = activeIndex === buttons.length - 1;
+      }
+
+      buttons.forEach((button, index) => {
+        button.addEventListener("click", () => activate(index));
+        button.addEventListener("keydown", event => {
+          if (event.key === "ArrowDown" || event.key === "ArrowRight") { event.preventDefault(); activate((index + 1) % buttons.length, true); }
+          if (event.key === "ArrowUp" || event.key === "ArrowLeft") { event.preventDefault(); activate((index - 1 + buttons.length) % buttons.length, true); }
+          if (event.key === "Home") { event.preventDefault(); activate(0, true); }
+          if (event.key === "End") { event.preventDefault(); activate(buttons.length - 1, true); }
+        });
+      });
+      previous.addEventListener("click", () => activate(activeIndex - 1, true));
+      next.addEventListener("click", () => activate(activeIndex + 1, true));
+      showAll.addEventListener("click", () => {
+        fullRoute = !fullRoute;
+        showAll.textContent = fullRoute ? "Focus active step" : "Show full route";
+        activate(activeIndex);
+      });
+      activate(0);
+    }
+
+    document.querySelectorAll("[data-flow]").forEach(initializeFlow);
+
+    const outcomeResult = document.querySelector("[data-outcome-result]");
+    document.querySelector("[data-outcome-picker]").addEventListener("change", event => {
+      if (event.target.name === "single-outcome") outcomeResult.textContent = outcomeCopy[event.target.value];
+    });
+
+    const scenarioOutcomes = {
+      progress: { label: "Task completes; PRD changes", result: "continue", transcript: "ralph-once.sh → ITERATION_COMPLETE\nprd.json changed → continue" },
+      complete: { label: "All tasks complete", result: "complete", transcript: "ralph-once.sh → COMPLETE\nall PRD tasks pass → stop successfully" },
+      blocked: { label: "Blocked", result: "blocked", transcript: "ralph-once.sh → BLOCKED\nstop → human intervention required" },
+      failed: { label: "Failed", result: "failed", transcript: "ralph-once.sh → FAILED or nonzero\nstop → inspect logs and validation" },
+      unchanged: { label: "PRD unchanged", result: "unchanged", transcript: "ralph-once.sh → ITERATION_COMPLETE\nprd.json checksum unchanged → stop" },
+      malformed: { label: "Success marker missing", result: "malformed", transcript: "prd.json changed\nITERATION_COMPLETE marker missing → stop" }
+    };
+
+    const labForm = document.querySelector("[data-lab-form]");
+    const maxIterations = document.querySelector("#max-iterations");
+    const scenarioFields = document.querySelector("[data-scenario-fields]");
+    const relayRows = document.querySelector("[data-relay-rows]");
+    const transcript = document.querySelector("[data-transcript]");
+    const labStatus = document.querySelector("[data-lab-status]");
+
+    function buildScenarioFields() {
+      const count = Number(maxIterations.value);
+      scenarioFields.replaceChildren();
+      for (let index = 1; index <= count; index += 1) {
+        const wrapper = document.createElement("div");
+        wrapper.className = "field";
+        const label = document.createElement("label");
+        label.htmlFor = `iteration-${index}`;
+        label.textContent = `Iteration ${index} outcome`;
+        const select = document.createElement("select");
+        select.id = `iteration-${index}`;
+        select.name = `iteration-${index}`;
+        Object.entries(scenarioOutcomes).forEach(([value, outcome]) => {
+          const option = document.createElement("option");
+          option.value = value;
+          option.textContent = outcome.label;
+          if (index === count && value === "complete") option.selected = true;
+          select.append(option);
+        });
+        wrapper.append(label, select);
+        scenarioFields.append(wrapper);
+      }
+    }
+
+    function runScenario() {
+      relayRows.replaceChildren();
+      const selections = Array.from(scenarioFields.querySelectorAll("select"));
+      const lines = [];
+      let stopped = false;
+      selections.forEach((select, index) => {
+        if (stopped) return;
+        const iteration = index + 1;
+        const outcome = scenarioOutcomes[select.value];
+        const row = document.createElement("div");
+        row.className = "relay-row";
+        const number = document.createElement("strong");
+        number.textContent = `Pass ${iteration}`;
+        const track = document.createElement("div");
+        track.className = "row-track";
+        track.setAttribute("aria-hidden", "true");
+        const result = document.createElement("span");
+        result.className = "row-result";
+        result.textContent = outcome.result;
+        row.append(number, track, result);
+        relayRows.append(row);
+        lines.push(`Iteration ${iteration}/${selections.length}`, outcome.transcript, "");
+        stopped = select.value !== "progress";
+      });
+      if (!stopped) lines.push(`Iteration limit ${selections.length} reached`, "work remains → stop nonzero");
+      transcript.value = lines.join("\n").trim();
+      labStatus.textContent = stopped ? "Scenario stopped at its first terminal condition." : "Scenario reached its fixed iteration limit.";
+    }
+
+    maxIterations.addEventListener("change", buildScenarioFields);
+    labForm.addEventListener("submit", event => { event.preventDefault(); runScenario(); });
+    labForm.addEventListener("reset", () => {
+      window.setTimeout(() => {
+        buildScenarioFields();
+        relayRows.replaceChildren();
+        transcript.value = "Choose outcomes and run the scenario.";
+        labStatus.textContent = "Scenario reset.";
+      }, 0);
+    });
+    document.querySelector("[data-copy-transcript]").addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(transcript.value);
+        labStatus.textContent = "Transcript copied.";
+      } catch {
+        transcript.focus();
+        transcript.select();
+        labStatus.textContent = "Clipboard access is unavailable. The transcript is selected for manual copying.";
+      }
+    });
+
+    buildScenarioFields();
+    runScenario();
+  </script>
+</body>
+</html>

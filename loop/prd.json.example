@@ -1,0 +1,112 @@
+{
+  "$schema": "./prd.schema.json",
+  "schemaVersion": 1,
+  "project": "Team task board",
+  "description": "Add authentication and task management to an existing web application.",
+  "tasks": [
+    {
+      "id": "TASK-001",
+      "title": "Add the user account data model",
+      "description": "Create the user account schema and migration required by authentication.",
+      "branchName": "ralph/task-001-user-account-model",
+      "priority": 1,
+      "dependsOn": [],
+      "acceptanceCriteria": [
+        "The user model stores a unique email address and a password hash.",
+        "The database migration applies and rolls back successfully.",
+        "Relevant schema and migration tests pass."
+      ],
+      "passes": true,
+      "notes": "Implemented in commit abc1234. Migration and model tests passed."
+    },
+    {
+      "id": "TASK-002",
+      "title": "Implement login authentication",
+      "description": "Allow registered users to authenticate with an email address and password.",
+      "branchName": "ralph/task-002-login-authentication",
+      "priority": 2,
+      "dependsOn": [
+        "TASK-001"
+      ],
+      "acceptanceCriteria": [
+        "Valid credentials create an authenticated session.",
+        "Invalid credentials return the established authentication error without revealing which field was incorrect.",
+        "Authentication tests and relevant project checks pass."
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "TASK-003",
+      "title": "Add the login form",
+      "description": "Provide the user interface for submitting login credentials and displaying validation errors.",
+      "branchName": "ralph/task-003-login-form",
+      "priority": 3,
+      "dependsOn": [
+        "TASK-002"
+      ],
+      "acceptanceCriteria": [
+        "The form includes labeled email and password fields.",
+        "The form rejects malformed email addresses before submission.",
+        "Authentication failures are displayed accessibly without clearing the email field.",
+        "The login workflow is verified in the browser and relevant automated checks pass."
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "TASK-004",
+      "title": "Create the task data model",
+      "description": "Create the persisted task entity and associate each task with its owning user.",
+      "branchName": "ralph/task-004-task-data-model",
+      "priority": 2,
+      "dependsOn": [
+        "TASK-001"
+      ],
+      "acceptanceCriteria": [
+        "A task stores a title, completion state, owner, and timestamps.",
+        "Deleting a user handles owned tasks according to the documented data-retention policy.",
+        "The migration and model tests pass."
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "TASK-005",
+      "title": "Add task creation",
+      "description": "Allow an authenticated user to create a task from the task board.",
+      "branchName": "ralph/task-005-task-creation",
+      "priority": 3,
+      "dependsOn": [
+        "TASK-002",
+        "TASK-004"
+      ],
+      "acceptanceCriteria": [
+        "An authenticated user can create a task with a nonempty title.",
+        "The new task is associated with the authenticated user.",
+        "Unauthenticated requests are rejected using the application's established behavior.",
+        "Task creation tests and relevant project checks pass."
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "TASK-006",
+      "title": "Add task completion controls",
+      "description": "Allow an authenticated user to mark an owned task complete or incomplete.",
+      "branchName": "ralph/task-006-task-completion",
+      "priority": 4,
+      "dependsOn": [
+        "TASK-005"
+      ],
+      "acceptanceCriteria": [
+        "A user can mark an owned task complete and incomplete.",
+        "A user cannot change another user's task.",
+        "The updated state remains correct after reloading the task board.",
+        "The interaction is verified in the browser and relevant automated checks pass."
+      ],
+      "passes": false,
+      "notes": ""
+    }
+  ]
+}
