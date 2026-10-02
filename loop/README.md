@@ -4,7 +4,7 @@ Copy this directory to `<project-root>/loop`. It is intentionally project-local:
 
 ## How the loop works
 
-Open [The Fresh-Context Relay](docs/ralph-flowchart.html) for an offline interactive walkthrough of one supervised run, durable handoff state, every outer-loop stop condition, and a small scenario simulator. It runs directly in the browser and does not inspect or change the project.
+Open [The Fresh-Context Relay](https://mtahafarooq.github.io/ralph-loop/loop/docs/ralph-flowchart.html) for an offline interactive walkthrough of one supervised run, durable handoff state, every outer-loop stop condition, and a small scenario simulator. It runs directly in the browser and does not inspect or change the project.
 
 ## Requirements
 
@@ -92,7 +92,7 @@ Run one supervised iteration:
 ./loop/ralph-once.sh
 ```
 
-The script executes from the host project root regardless of your current directory, captures output under `loop/.runtime/logs/`, and returns the agent's exit status. It performs no internal repetition. Follow the [single-run chapter](docs/ralph-flowchart.html#single-run) to inspect each boundary and decision.
+The script executes from the host project root regardless of your current directory, captures output under `loop/.runtime/logs/`, and returns the agent's exit status. It performs no internal repetition. Follow the [single-run chapter](https://mtahafarooq.github.io/ralph-loop/loop/docs/ralph-flowchart.html#single-run) to inspect each boundary and decision.
 
 Commits are enabled by default. Disable them while learning:
 
@@ -108,7 +108,7 @@ After the one-run behavior is reliable:
 ./loop/ralph.sh 10
 ```
 
-Every iteration creates a fresh agent process. The loop stops on verified completion, failure, blocked work, unchanged state, a malformed protocol result, concurrent execution, or the iteration limit. It does not retry failures automatically. The [bounded-loop chapter](docs/ralph-flowchart.html#bounded-loop) shows these checks in execution order.
+Every iteration creates a fresh agent process. The loop stops on verified completion, failure, blocked work, unchanged state, a malformed protocol result, concurrent execution, or the iteration limit. It does not retry failures automatically. The [bounded-loop chapter](https://mtahafarooq.github.io/ralph-loop/loop/docs/ralph-flowchart.html#bounded-loop) shows these checks in execution order.
 
 ## Agent configuration
 
