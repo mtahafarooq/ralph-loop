@@ -1,65 +1,103 @@
 # <Feature or Product Name>
 
+## In one paragraph
+
+<Explain the whole feature in three to five plain sentences, as if to a smart friend who knows
+nothing about the project. No jargon. This is the only part some readers will read.>
+
 ## Summary
 
-<Concise description of the change and intended outcome.>
+<A slightly more precise version of the above: what changes, and the intended outcome.>
 
 ## Problem
 
-<Current problem, affected users, and supporting context.>
+<What is wrong or missing today, who feels it, and the evidence. Plain language.>
 
 ## Goals
 
-- <Observable outcome>
+- <An outcome you can observe or measure>
 
 ## Non-Goals
 
-- <Explicitly excluded behavior>
+- <Something explicitly out of scope, and one line on why>
 
 ## Users and Use Cases
 
-- **<User or role>:** <Primary workflow and need>
+- **<Role>:** <what they do, and what they need from this feature>
+
+## How It Works
+
+<One or two sentences describing the flow.>
+
+```mermaid
+flowchart TD
+    A[<start>] --> B{<decision>}
+    B -- yes --> C[<action>]
+    B -- no --> D[<other action>]
+```
+
+```
+<ASCII fallback of the same flow>
+
+<start> -> <decision>?
+   yes -> <action>
+   no  -> <other action>
+```
+
+## Glossary
+
+- **<term>** — <plain definition>
+- **<acronym>** — <full name>; <plain definition>
 
 ## Functional Requirements
 
-### REQ-001: <Requirement title>
+### REQ-001: <Plain title>
 
-<Required behavior and relevant rules.>
+<What the user can do, in plain language. Keep sentences short.>
+
+**What this means:** <one sentence translating the requirement into everyday words.>
+
+**Example:**
+- Given <a specific input or situation>
+- When <the user does something>
+- Then <the exact observable result>
 
 #### Acceptance Criteria
 
-- <Observable, independently verifiable result>
+- [ ] <Observable, independently checkable result>
+- [ ] <Relevant error or edge case, and what the user sees>
+- [ ] <Applicable security, data, or compatibility behavior>
 
 ## Non-Functional Requirements
 
-- **Security and privacy:** <Requirement or not applicable with reason>
-- **Accessibility:** <Requirement or not applicable with reason>
-- **Performance and reliability:** <Requirement or not applicable with reason>
+- **Security and privacy:** <requirement, or "Not applicable — <reason>">
+- **Accessibility:** <requirement, or "Not applicable — <reason>">
+- **Performance and reliability:** <requirement with a number, or "Not applicable — <reason>">
 
 ## Dependencies and Constraints
 
-- <Dependency or constraint>
+- <Dependency or constraint, and what it affects>
 
 ## Data, Migration, and Compatibility
 
-<Required data changes, migration, backward compatibility, and rollback considerations.>
+<What data is created, read, changed, or deleted. How it migrates. What breaks, and the rollback.>
 
 ## Testing and Validation
 
-- <How requirements and edge cases will be verified>
+- <How each requirement and its edge cases will be verified>
 
 ## Rollout and Observability
 
-<Release, monitoring, support, and rollback expectations.>
+<How it ships, how you monitor it, who supports it, and how to roll back.>
 
 ## Risks
 
-- **<Risk>:** <Mitigation>
+- **<Risk>:** <mitigation>
 
 ## Assumptions
 
-- <Unconfirmed assumption>
+- <A guess you made that still needs validation>
 
 ## Open Questions
 
-- <Question that remains unresolved>
+- <An unresolved question that may change scope or behavior>
