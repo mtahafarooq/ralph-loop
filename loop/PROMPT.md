@@ -34,7 +34,7 @@ On success:
 
 1. Set only the selected task's `passes` to `true` and add concise durable evidence to its `notes`.
 2. Append a progress entry to `loop/progress.txt` containing the UTC timestamp, task ID/title/branch, summary, important files, validation commands and results, remaining concerns, and commit hash when available.
-3. If the runtime context says auto-commit is enabled, create one atomic commit containing only task-related changes plus the PRD and progress updates. If disabled, leave the verified changes uncommitted.
+3. Create one atomic commit containing only the task-related changes plus the PRD and progress updates.
 4. Output `<ralph>ITERATION_COMPLETE:TASK-ID</ralph>`, replacing `TASK-ID` with the selected ID.
 5. If all tasks now pass, also output `<promise>COMPLETE</promise>`.
 
