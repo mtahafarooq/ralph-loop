@@ -4,9 +4,9 @@ You are running one fresh Ralph iteration in the host project. Complete at most 
 
 ## Read first
 
-1. Read `loop/prd.json`, `loop/progress.txt`, recent Git history, and relevant repository guidance such as `AGENTS.md`, `CONTRIBUTING.md`, manifests, and test configuration.
+1. Read `prd.json`, `progress.txt`, recent Git history, and relevant repository guidance such as `AGENTS.md`, `CONTRIBUTING.md`, manifests, and test configuration.
 2. Do not assume a package manager or validation command. Discover the project's established commands.
-3. Treat `loop/progress.txt` as append-only durable memory. Never edit or remove old entries.
+3. Treat `progress.txt` as append-only durable memory. Never edit or remove old entries.
 
 ## Select one task
 
@@ -17,7 +17,7 @@ Choose exactly one ready task by:
 1. lowest numeric `priority`;
 2. document order as the tie-breaker.
 
-If every task passes, verify that fact from `loop/prd.json`, output `<promise>COMPLETE</promise>`, and stop without changing files.
+If every task passes, verify that fact from `prd.json`, output `<promise>COMPLETE</promise>`, and stop without changing files.
 
 If incomplete tasks exist but none is ready, output `<ralph>BLOCKED:no-ready-task</ralph>` and stop.
 
@@ -33,7 +33,7 @@ If incomplete tasks exist but none is ready, output `<ralph>BLOCKED:no-ready-tas
 On success:
 
 1. Set only the selected task's `passes` to `true` and add concise durable evidence to its `notes`.
-2. Append a progress entry to `loop/progress.txt` containing the UTC timestamp, task ID/title/branch, summary, important files, validation commands and results, remaining concerns, and commit hash when available.
+2. Append a progress entry to `progress.txt` containing the UTC timestamp, task ID/title/branch, summary, important files, validation commands and results, remaining concerns, and commit hash when available.
 3. Create one atomic commit containing only the task-related changes plus the PRD and progress updates.
 4. Output `<ralph>ITERATION_COMPLETE:TASK-ID</ralph>`, replacing `TASK-ID` with the selected ID.
 5. If all tasks now pass, also output `<promise>COMPLETE</promise>`.
@@ -41,7 +41,7 @@ On success:
 On failure:
 
 1. Keep `passes` as `false`.
-2. Append actionable failure and validation context to the task's `notes` and `loop/progress.txt` when it is safe to do so.
+2. Append actionable failure and validation context to the task's `notes` and `progress.txt` when it is safe to do so.
 3. Do not create a success commit.
 4. Output `<ralph>FAILED:TASK-ID</ralph>` and stop.
 

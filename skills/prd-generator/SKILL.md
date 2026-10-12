@@ -12,7 +12,7 @@ Create a decision-ready PRD without inventing requirements.
 1. Inspect relevant repository documentation, architecture, manifests, and existing behavior before asking questions.
 2. Read [the discovery guide](references/discovery-guide.md), then ask only the smallest useful batch of unanswered questions.
 3. Separate confirmed requirements, explicit constraints, assumptions, and open questions.
-4. Draft the PRD using [the template](assets/prd-template.md). Default to `loop/prd.md` unless another path is requested.
+4. Draft the PRD using [the template](assets/prd-template.md). Default to `prd.md` unless another path is requested.
 5. Review the draft with [the quality checklist](references/quality-checklist.md).
 6. Resolve material ambiguity before presenting the PRD as approved. Clearly retain non-blocking open questions.
 7. Never overwrite an existing PRD without confirmation. Propose a revision or patch when one already exists.
